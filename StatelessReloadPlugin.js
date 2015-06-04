@@ -5,14 +5,16 @@ function St8lessPlugin(window) {
 }
 St8lessPlugin.identifier = "st8less";
 St8lessPlugin.version = '1.0';
-St8lessPlugin.PATTERN = /st8less\.js$/;
+St8lessPlugin.PATTERN = /st8less\.js/;
 St8lessPlugin.prototype = {
     doReloadScript: function (scriptNode) {
-        var oldSrc = scriptNode.src,
+        var oldSrcParts = scriptNode.src.split("?"),
+            oldSrcBase = oldSrcParts[0],
+            oldSrcIndex = oldSrcParts[1] ? parseInt(oldSrcParts[1], 10) : 0,
             parent = scriptNode.parentNode,
             newNode = this.window.document.createElement("script");
         parent.removeChild(scriptNode);
-        newNode.src = oldSrc;
+        newNode.src = [oldSrcBase, oldSrcIndex + 1].join('?');
         parent.appendChild(newNode);
     },
 
