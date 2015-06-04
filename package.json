@@ -1,0 +1,30 @@
+{
+  "name": "gulp-livereload-mithril",
+  "version": "0.2.0",
+  "description": "Extracts view functions from mithril code and provides live reload plugin to reload them without page reloading",
+  "main": "index.js",
+  "scripts": {
+    "opencover": "istanbul cover node_modules/mocha/bin/_mocha && start coverage\\lcov-report\\index.html",
+    "test": "istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
+  },
+  "keywords": [
+    "mithril",
+    "live-reload",
+    "gulp"
+  ],
+  "author": "Alexey Grishin",
+  "license": "MIT",
+  "dependencies": {
+    "gulp-util": "^3.0.5",
+    "merge": "^1.2.0",
+    "st8less": "^0.2.0",
+    "through2": "^0.6.5"
+  },
+  "devDependencies": {
+    "expect.js": "^0.3.1",
+    "gulp": "^3.9.0",
+    "istanbul": "^0.3.14",
+    "mocha": "^2.2.5",
+    "stream-assert": "^2.0.2"
+  }
+}
