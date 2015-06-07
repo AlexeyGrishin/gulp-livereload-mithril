@@ -31,4 +31,22 @@ describe("mithril reload plugin", function () {
             .pipe(assert.end(done));
 
     });
+    it("shall inject script into first file by default", function (done) {
+        gulp.src(__dirname + "/suite1/file1.js")
+            .pipe(extractViews({scriptName: "aaa.js", dest: "js/lib"}))
+            .pipe(assert.first(function (d) {
+                var injected = d.contents.toString().split("\n")[0];
+                expect(injected).to.match(/aaa\.js/);
+            }))
+            .pipe(assert.end(done));
+    });
+    it("shall not inject script into first file if specified in options", function (done) {
+        gulp.src(__dirname + "/suite1/file1.js")
+            .pipe(extractViews({scriptName: "aaa.js", dest: "js/lib", inject: false}))
+            .pipe(assert.first(function (d) {
+                var injected = d.contents.toString().split("\n")[0];
+                expect(injected).to.not.match(/aaa\.js/);
+            }))
+            .pipe(assert.end(done));
+    });
 });
