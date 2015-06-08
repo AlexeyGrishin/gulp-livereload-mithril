@@ -33,10 +33,10 @@ describe("mithril reload plugin", function () {
     });
     it("shall inject script into first file by default", function (done) {
         gulp.src(__dirname + "/suite1/file1.js")
-            .pipe(extractViews({scriptName: "aaa.js", dest: "js/lib"}))
+            .pipe(extractViews({scriptName: "aaa.js", dest: "js/lib", injectPath: "/scripts"}))
             .pipe(assert.first(function (d) {
                 var injected = d.contents.toString().split("\n")[0];
-                expect(injected).to.match(/aaa\.js/);
+                expect(injected).to.match(/scripts\/aaa\.js/);
             }))
             .pipe(assert.end(done));
     });

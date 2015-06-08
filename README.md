@@ -56,6 +56,7 @@ You do not need to include extracted file manually by default - corresponding `<
 * `dest` - path to store the js file with extracted view functions. Note that path is relative to the `gulp.dest` folder you'll specify. Default is empty (so new file will be placed into the root of dest folder)
 * `scriptName` - name of the script file. Default is `st8less.js`
 * `inject` - if true then script with extracted functions is injected automatically (via `document.write` in one of the original scripts). If you'd like to include it to page manually set it to false.
+* `injectPath` - relative path to script for injection. Has meaning if `inject` is true then script with path
 * `split` - object that declares which functions shall be extracted. See `mithril.extract.js` in sources for example. Shall have 2 properties:
   * `append` - string to write into extracted file
   * `criteria` - function that will be called for each met function and shall return true if it shall be extracted. Accepts 1 object parameter with properties:

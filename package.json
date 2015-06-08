@@ -1,6 +1,6 @@
 {
   "name": "gulp-livereload-mithril",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Extracts view functions from mithril code and provides live reload plugin to reload them without page reloading",
   "main": "index.js",
   "scripts": {

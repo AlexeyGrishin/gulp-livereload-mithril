@@ -10,7 +10,8 @@ function extractViews(opts) {
         dest: "",
         scriptName: "st8less.js",
         split: module.exports.Mithril,
-        inject: true
+        inject: true,
+        injectPath: ""
     }, opts);
     opts = opts || {};
     opts.dest = path.join(opts.dest, opts.scriptName);
@@ -19,7 +20,7 @@ function extractViews(opts) {
 
     function injectFirstFile(file, enc) {
         if (!firstFileInjected) {
-            var webPath = opts.dest.split(path.sep).join("/"), oldContents = file.contents.toString(enc);
+            var webPath = [opts.injectPath, opts.scriptName].join("/"), oldContents = file.contents.toString(enc);
             //inspired by http://stackoverflow.com/questions/3248384/document-createelementscript-synchronously
             file.contents = new Buffer([
                 "// inject " + webPath + " into page. Inserted automatically by gulp-livereload-plugin",
@@ -46,7 +47,7 @@ function extractViews(opts) {
             return cb(null, file);
         }
         if (file.isStream()) {
-            throw gutil.PluginError("[gulp-split] Does not support streams");
+            throw new gutil.PluginError("[gulp-split] Does not support streams");
         }
         var src = file.contents.toString(enc);
         splitter.parse(src, function (err, dst) {
