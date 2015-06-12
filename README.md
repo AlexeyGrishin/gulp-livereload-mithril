@@ -16,15 +16,21 @@ See [here](https://github.com/AlexeyGrishin/live-reload-mithril-demo)
 npm install --save-dev gulp-livereload-mithril
 ```
 
-and in 99% cases (and for demo above) you also will need:
+In 99% cases (and for demo above) you also will need:
 
 ```
 npm install --save-dev gulp-changed gulp-live-server
 ```
 
+And if you use browserify then you'll probably need additional modules:
+```
+npm install --save-dev vynil-buffer vynil-source-stream browserify-incremental
+```
+
 # How to use
 
 Just include it in pipe *after* all processing of js code but *before* saving it to destination folder and notifying live reload server.
+Always use `gulp-changed` *after* this plugin.
 
 ```javascript
 
@@ -49,6 +55,46 @@ If you don't know how to work with LiveReload please refer to documentation for 
 
 You do not need to include extracted file manually by default - corresponding `<script>` will be injected into one of your original js files.
 
+# How to use with browserify for big projects
+
+For small projects you may just put extractor after browserify. But if your project is big enough and you see noticeable delay between code change and browser update then you may use the following recipe:
+
+```javascript
+var extract = require('gulp-livereload-mithril');
+var source = require('vinyl-source-stream');
+var browserifyInc = require('browserify-incremental');
+var buffer = require('vinyl-buffer');
+
+var extract = require('gulp-livereload-mithril');
+
+//preparation
+b = browserifyInc({                                   // 1) create browserifier outside any task
+    entries: ["src/yout_root_script.coffee"],
+    extensions: ['.coffee'],
+});
+var m = extract().browserify;                         // 2) create extractor outside any task, get `browserify` property
+b
+    .transform('coffeeify')
+    .transform(m.transform());                        // 3) provide transform function (will be applied to any changed file)
+
+gulp.task('compile', function () {
+    b.bundle()
+        .pipe(source('index.js'))                      // 4.1) put composed by browserify source to pipe with name 'index.js'
+        .pipe(buffer())                                // 4.2) and convert it to buffer
+        .pipe(m.inject())                              // 5) here put extracted functions' file into pipe
+        .pipe(changed(DEST, {                          // 6) ignore js files which contents not changed
+            hasChanged: changed.compareSha1Digest      //
+        }))                                            //
+        .pipe(gulp.dest(DEST))                         // 7) copy changed to public
+        .pipe(server ? server.notify() : gutil.noop());// 8) notify server about changed files only.
+});
+
+```
+
+If then you use `watch` to run `compile` task on any change then `browserify-incremental` will get only changed files, recompile them and pass through our extractor. Then both browserified `index.js` and extracted `st8less.js` will be re-composed with changed functions only, which will take much less time.
+
+Note that both browserify and extractor are initialized outside any task, so they are able to keep state between task calls by watch. If you initialize them inside a task definition then full recompiling will be performed.
+
 # Configuration
 
 `extract()` functions accepts options object with following properties
@@ -64,3 +110,6 @@ You do not need to include extracted file manually by default - corresponding `<
     * `attribute` - first string expression in function body, for example in `function view() { "__stateless"; return 5;}` the attribute will be `__stateless`)
     * `paramNames` - list of function argument names
 
+It returns a function that could be used in a pipe. Also this function has `browserify` field which contains `browserify` helper object with 2 functions:
+* `transform` - returns transformer for `browserify`
+* `inject` - pipe function to gulp, shall be used after `browserify`.

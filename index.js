@@ -1,5 +1,5 @@
 "use strict";
-var Splitter = require('st8less');
+var CachedSplitter = require('./CachedSplitter');
 var through = require('through2');
 var path = require('path');
 var gutil = require('gulp-util');
@@ -16,13 +16,14 @@ function extractViews(opts) {
     opts = opts || {};
     opts.dest = path.join(opts.dest, opts.scriptName);
 
-    var splitterOptions = opts.split(opts), splitter = new Splitter(splitterOptions), firstFileInjected = !opts.inject;
+    var splitterOptions = opts.split(opts), extractor, splitter = new CachedSplitter(splitterOptions), firstFileInjected = !opts.inject;
 
-    function injectFirstFile(file, enc) {
+    function injectFirstFile(oldBody) {
         if (!firstFileInjected) {
-            var webPath = [opts.injectPath, opts.scriptName].join("/"), oldContents = file.contents.toString(enc);
+            var webPath = [opts.injectPath, opts.scriptName].join("/");
             //inspired by http://stackoverflow.com/questions/3248384/document-createelementscript-synchronously
-            file.contents = new Buffer([
+            firstFileInjected = true;
+            return [
                 "// inject " + webPath + " into page. Inserted automatically by gulp-livereload-plugin",
                 "(function loadScriptSynchronously() {",
                 "  var path = " + JSON.stringify(webPath) + ";",
@@ -34,34 +35,31 @@ function extractViews(opts) {
                 "  eval(src)",
                 "}.call());",
                 "// end of injection",
-                oldContents
-            ].join("\n"));
-            firstFileInjected = true;
+                oldBody
+            ].join("\n");
         }
+        return oldBody;
 
     }
-
 
     function extractFromFile(file, enc, cb) {
         if (file.isNull()) {
             return cb(null, file);
         }
         if (file.isStream()) {
-            throw new gutil.PluginError("[gulp-split] Does not support streams");
+            throw new gutil.PluginError("[gulp-extract] Does not support streams");
         }
         var src = file.contents.toString(enc);
-        splitter.parse(src, function (err, dst) {
+        splitter.parse(file.path, src, function (err, dst) {
             if (err) {
                 return cb(err);
             }
-            file.contents = new Buffer(dst);
-            injectFirstFile(file, enc);
+            file.contents = new Buffer(injectFirstFile(dst));
             cb(null, file);
         });
-
-
     }
-    return through.obj(extractFromFile, function (cb) {
+
+    function pushExtractedFile(cb) {
         var self = this;
         splitter.done(function (err, body) {
             if (err) {
@@ -74,7 +72,32 @@ function extractViews(opts) {
             self.push(file);
             cb();
         });
-    });
+
+    }
+    extractor = through.obj(extractFromFile, pushExtractedFile);
+    extractor.browserify = {
+        transform: function extractBrowserifyTransformCtor() {
+            return function extractBrowserifyTransform(file) {
+                return through(function transformBrowserifiedFile(buf, enc, next) {
+                    var self = this;
+                    splitter.parse(file, buf, function (err, changed) {
+                        self.push(changed);
+                        next();
+                    });
+                });
+            };
+        },
+        inject: function extractBrowserifyInjectCtor() {
+            return through.obj(function (file, enc, cb) {
+                file.contents = new Buffer(injectFirstFile(file.contents.toString(enc)));
+                cb(null, file);
+            }, function (cb) {
+                firstFileInjected = !opts.inject;
+                pushExtractedFile.call(this, cb);
+            });
+        }
+    };
+    return extractor;
 }
 
 module.exports = extractViews;
