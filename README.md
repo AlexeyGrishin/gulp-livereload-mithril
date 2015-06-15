@@ -9,6 +9,7 @@ LiveReload, so you may make changed in code and see result without page reload i
 # Demo
 
 See [here](https://github.com/AlexeyGrishin/live-reload-mithril-demo)
+![](https://habrastorage.org/files/498/c96/a0b/498c96a0bc6649a1916cdb73efb0e9e2.gif)
 
 # Install
 
